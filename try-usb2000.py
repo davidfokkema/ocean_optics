@@ -4,10 +4,16 @@ import platform
 import sys
 import time
 
-import libusb
-import matplotlib.pyplot as plt
+try:
+    import libusb
+except ModuleNotFoundError:
+    pass
+
+import plotext as plt
 import usb.backend.libusb1
 import usb.core
+
+INT_TIME = 1_000
 
 if usb.backend.libusb1.get_backend() is None:
     if platform.system() == "Windows":
@@ -19,23 +25,46 @@ if usb.backend.libusb1.get_backend() is None:
         usb.backend.libusb1.get_backend(find_library=lambda x: dll_path)
 
 dev = usb.core.find(idVendor=0x2457, idProduct=0x1002)
-dev.reset()
-time.sleep(0.1)
 dev.set_configuration()
 
-# dev.write(0x02, b"\xfe")
-# print(dev.read(0x87, 16))
-
-# dev.write(0x02, b"\x08")
-# print(dev.read(0x87, 16))
-
+# initialize device (acquires first spectrum)
 dev.write(0x02, b"\x01")
-packets = []
-for _ in range(64):
-    packets.append(dev.read(0x82, 64).tobytes())
-assert dev.read(0x82, 1).tobytes() == b"\x69"
+num_packets = 0
+while True:
+    # unfortunately, sometimes the first data is an extra \x69.
+    # keep reading until a timeout occurs.
+    try:
+        dev.read(0x82, 64)
+        num_packets += 1
+    except usb.core.USBTimeoutError:
+        break
+print(f"Read {num_packets} packets of data.")
 
-pixels = array.array("H", b"".join(packets))
-plt.figure()
-plt.plot(pixels[2:])
-plt.show()
+# set integration time
+dev.write(0x02, b"\x02" + int(INT_TIME).to_bytes(2, 'little'))
+
+try:
+    while True:
+        t0 = time.monotonic()
+        dev.write(0x02, b"\x09")
+        # wait for measurement to complete
+        time.sleep(INT_TIME / 1_000)
+
+        packets = []
+        for _ in range(64):
+            packets.append(dev.read(0x82, 64).tobytes())
+        assert dev.read(0x82, 64).tobytes() == b"\x69"
+
+        t1 = time.monotonic()
+
+        pixels = []
+        for lsb_packet, msb_packet in zip(packets[0:-1:2], packets[1:-1:2]):
+            for lsb, msb in zip(lsb_packet, msb_packet):
+                pixels.append(msb * 256 + lsb)
+
+        plt.clf()
+        plt.plot(pixels[20:])
+        plt.show()
+        print(f"Got {len(pixels)} pixels in {t1 - t0:.1f}s.")
+except KeyboardInterrupt:
+    pass
