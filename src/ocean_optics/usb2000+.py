@@ -1,7 +1,7 @@
-import array
 import time
 from dataclasses import dataclass
 
+import numpy as np
 import plotext as plt
 import usb.core
 import usb.util
@@ -19,7 +19,7 @@ class DeviceConfiguration:
 
 
 class OceanOpticsUSB2000Plus:
-    INT_TIME: int = 100_000
+    INT_TIME: int = 1_000_000
 
     _config: DeviceConfiguration
 
@@ -82,6 +82,15 @@ class OceanOpticsUSB2000Plus:
         data = value[2 : value.find(b"\x00", 2)]
         return data.decode()
 
+    def get_spectrum(self):
+        data = self.get_raw_spectrum()
+        x = np.arange(len(data))
+        c = self._config.wavelength_calibration_coefficients
+        # FIXME: check calibration
+        # FIXME: read out autonulling information and scale accordingly
+        x = c[0] + c[1] * x + c[2] * x**2 + c[3] * x**3
+        return x[20:], data[20:]
+
     def get_raw_spectrum(self):
         self.device.write(0x01, b"\x09")
         # wait for measurement to complete, integration time is in microseconds.
@@ -99,7 +108,8 @@ class OceanOpticsUSB2000Plus:
             packets.append(self.device.read(0x82, 1, 100).tobytes())
         assert packets[-1][-1] == 0x69
 
-        return array.array("H", b"".join(packets[:-1]))
+        data = b"".join(packets[:-1])
+        return np.frombuffer(data, dtype=np.uint16)
 
     def close(self) -> None:
         print("Shutting down.")
@@ -110,10 +120,13 @@ class OceanOpticsUSB2000Plus:
 if __name__ == "__main__":
     dev = OceanOpticsUSB2000Plus()
 
-    pixels = dev.get_raw_spectrum()
+    x, data = dev.get_spectrum()
     plt.clf()
-    plt.plot(pixels[20:])
+    plt.plot(x, data)
     plt.show()
+
+    print(x.shape)
+    print(data.shape)
 
     print(dev.get_configuration())
 
