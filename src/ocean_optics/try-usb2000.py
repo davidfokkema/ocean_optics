@@ -13,7 +13,7 @@ import plotext as plt
 import usb.backend.libusb1
 import usb.core
 
-INT_TIME = 1_000
+INT_TIME = 100
 
 if usb.backend.libusb1.get_backend() is None:
     if platform.system() == "Windows":

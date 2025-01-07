@@ -5,7 +5,7 @@ import plotext as plt
 import usb.core
 import usb.util
 
-INT_TIME = 500_000
+INT_TIME = 100_000
 
 dev = usb.core.find(idVendor=0x2457, idProduct=0x101E)
 dev.set_configuration()
@@ -19,11 +19,13 @@ try:
         # wait for measurement to complete
         time.sleep(INT_TIME / 1_000_000)
         packets = []
-        while True:
+        for _ in range(8):
             try:
-                packets.append(dev.read(0x82, 512, 10).tobytes())
+                packets.append(dev.read(0x82, 512, 100).tobytes())
             except usb.core.USBTimeoutError:
                 break
+        else:
+            packets.append(dev.read(0x82, 1, 100).tobytes())
         assert packets[-1][-1] == 0x69
         t1 = time.monotonic()
 
