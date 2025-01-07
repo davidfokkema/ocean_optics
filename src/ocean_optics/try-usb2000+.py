@@ -8,6 +8,7 @@ import usb.util
 INT_TIME = 100_000
 
 dev = usb.core.find(idVendor=0x2457, idProduct=0x101E)
+dev.reset()
 dev.set_configuration()
 dev.write(0x01, b"\x01")
 dev.write(0x01, b"\x02" + int(INT_TIME).to_bytes(4, 'little'))
