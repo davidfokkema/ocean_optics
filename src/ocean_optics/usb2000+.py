@@ -27,7 +27,7 @@ class OceanOpticsUSB2000Plus:
         self.device = usb.core.find(idVendor=0x2457, idProduct=0x101E)
         self.device.set_configuration()
 
-        self.clear_buffers()
+        # self.clear_buffers()
 
         # Initialize device
         self.device.write(0x01, b"\x01")
@@ -43,7 +43,7 @@ class OceanOpticsUSB2000Plus:
             while True:
                 try:
                     data = self.device.read(
-                        endpoint=endpoint, size_or_buffer=1_000_000, timeout=100
+                        endpoint=endpoint, size_or_buffer=1_000, timeout=100
                     )
                 except usb.core.USBTimeoutError:
                     print(f"ENDPOINT 0x{endpoint:x} timed out.")
@@ -148,16 +148,18 @@ class OceanOpticsUSB2000Plus:
 if __name__ == "__main__":
     dev = OceanOpticsUSB2000Plus()
 
-    for _ in range(10):
+    for _ in range(9):
         data = dev.get_raw_spectrum()
     # plt.clf()
     # plt.plot([int(y) for y in data])
     # plt.show()
 
-    try:
-        print(dev.get_configuration())
-    except usb.core.USBTimeoutError:
-        print("Read on config failed.")
+    for _ in range(5):
+        try:
+            dev.get_configuration()
+        except usb.core.USBTimeoutError:
+            print("Read on config failed.")
+        print()
 
     # usb.util.release_interface(dev.device, 0)
     # usb.util.dispose_resources(dev.device)
@@ -168,4 +170,4 @@ if __name__ == "__main__":
     # 1 / 0
     # dev.close()
 
-    dev.device.reset()
+    # dev.device.reset()
