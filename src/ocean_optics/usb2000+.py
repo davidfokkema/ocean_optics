@@ -16,6 +16,7 @@ class DeviceConfiguration:
     polynomial_order_nonlinearity_calibration: int
     optical_bench: str
     device_configuration: str
+    saturation_level: np.uint16
 
 
 class OceanOpticsUSB2000Plus:
@@ -41,6 +42,7 @@ class OceanOpticsUSB2000Plus:
         # Set default integration time
         self.device.write(0x01, b"\x02" + int(self.INT_TIME).to_bytes(4, "little"))
 
+        self.set_shutdown_mode()
         self._config = self.get_configuration()
 
     def clear_buffers(self) -> None:
@@ -70,6 +72,8 @@ class OceanOpticsUSB2000Plus:
         polynomial = int(self._query_configuration_parameter(14))
         bench = self._query_configuration_parameter(15)
         dev_config = self._query_configuration_parameter(16)
+        saturation_level = self._get_saturation_level()
+
         return DeviceConfiguration(
             serial_number=serial,
             wavelength_calibration_coefficients=wavelength,
@@ -78,6 +82,7 @@ class OceanOpticsUSB2000Plus:
             polynomial_order_nonlinearity_calibration=polynomial,
             optical_bench=bench,
             device_configuration=dev_config,
+            saturation_level=saturation_level,
         )
 
     def _query_configuration_parameter(self, index: int) -> str:
@@ -100,13 +105,26 @@ class OceanOpticsUSB2000Plus:
         data = value[2 : value.find(b"\x00", 2)]
         return data.decode()
 
+    def _get_saturation_level(self) -> int:
+        """Get device saturation level.
+
+        Returns:
+            int: saturation level.
+        """
+        command = b"\x05\x11"
+        self.device.write(0x01, command)
+        data: bytes = self.device.read(0x81, 17).tobytes()
+        assert data[:2] == command
+        return np.frombuffer(data[6:8], dtype=np.uint16)[0]
+
     def get_spectrum(self):
         data = self.get_raw_spectrum()
         x = np.arange(len(data))
         c = self._config.wavelength_calibration_coefficients
         # FIXME: check calibration
-        # FIXME: read out autonulling information and scale accordingly
         x = c[0] + c[1] * x + c[2] * x**2 + c[3] * x**3
+        # scale data, described as 'autonulling' in the manual.
+        data = data * (65535 / self._config.saturation_level)
         return x[20:], data[20:]
 
     def get_raw_spectrum(self):
@@ -129,10 +147,9 @@ class OceanOpticsUSB2000Plus:
         data = b"".join(packets[:-1])
         return np.frombuffer(data, dtype=np.uint16)
 
-    def close(self) -> None:
-        print("Shutting down.")
+    def set_shutdown_mode(self) -> None:
+        """Set shutdown (low power) mode."""
         self.device.write(0x01, b"\x04\x00\x00")
-        print("Done.")
 
 
 if __name__ == "__main__":
@@ -143,13 +160,4 @@ if __name__ == "__main__":
     plt.plot(x, [int(y) for y in data])
     plt.show()
 
-    print(x.shape)
-    print(data.shape)
-
     print(dev.get_configuration())
-
-    # Make sure old data is left in the buffers, for testing
-    dev.device.write(0x01, b"\x09")
-    dev.device.read(0x82, 512, 100).tobytes()
-
-    dev.close()
