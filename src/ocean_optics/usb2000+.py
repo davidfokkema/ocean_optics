@@ -28,22 +28,30 @@ class OceanOpticsUSB2000Plus:
         self.device.set_configuration()
         self.clear_buffers()
 
+        time.sleep(1)
         # Initialize device
         self.device.write(0x01, b"\x01")
+        time.sleep(1)
         # Set default integration time
         self.device.write(0x01, b"\x02" + int(self.INT_TIME).to_bytes(4, "little"))
+
+        time.sleep(1)
 
         self._config = self.get_configuration()
 
     def clear_buffers(self) -> None:
         """Clear buffers by reading from both IN endpoints."""
         for endpoint in 0x81, 0x82:
-            try:
-                self.device.read(
-                    endpoint=endpoint, size_or_buffer=1_000_000, timeout=100
-                )
-            except usb.core.USBTimeoutError:
-                pass
+            while True:
+                try:
+                    self.device.read(
+                        endpoint=endpoint, size_or_buffer=1_000_000, timeout=100
+                    )
+                except usb.core.USBTimeoutError:
+                    print(f"ENDPOINT 0x{endpoint:x} timed out.")
+                    break
+                else:
+                    time.sleep(1)
 
     def get_configuration(self) -> DeviceConfiguration:
         """Get all configuration parameters.
@@ -84,6 +92,7 @@ class OceanOpticsUSB2000Plus:
         Returns:
             str: the value of the parameter as text.
         """
+        print(f"Querying parameter {index}...")
         command = b"\x05" + index.to_bytes(1)
         self.device.write(0x01, command)
         value: bytes = self.device.read(0x81, 17).tobytes()
