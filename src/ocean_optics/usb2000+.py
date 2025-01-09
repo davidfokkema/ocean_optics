@@ -26,18 +26,16 @@ class OceanOpticsUSB2000Plus:
     def __init__(self) -> None:
         self.device = usb.core.find(idVendor=0x2457, idProduct=0x101E)
         self.device.set_configuration()
-        self.clear_buffers()
 
-        time.sleep(1)
+        # self.clear_buffers()
+
         # Initialize device
         self.device.write(0x01, b"\x01")
-        time.sleep(1)
+
         # Set default integration time
         self.device.write(0x01, b"\x02" + int(self.INT_TIME).to_bytes(4, "little"))
 
-        time.sleep(1)
-
-        self._config = self.get_configuration()
+        # self._config = self.get_configuration()
 
     def clear_buffers(self) -> None:
         """Clear buffers by reading from both IN endpoints."""
@@ -116,16 +114,25 @@ class OceanOpticsUSB2000Plus:
         # FIXME: don't sleep, because the device will automatically acquire two
         # additional spectra which will be available sooner than acquiring a
         # fresh one.
-        time.sleep(self.INT_TIME / 1_000_000)
+        # time.sleep(self.INT_TIME / 1_000_000)
         packets = []
         for _ in range(8):
             try:
-                packets.append(self.device.read(0x82, 512, 100).tobytes())
+                packets.append(
+                    self.device.read(
+                        0x82, 512, int(self.INT_TIME / 1_000) + 100
+                    ).tobytes()
+                )
+                print(f"Read {len(packets[-1])} bytes")
             except usb.core.USBTimeoutError:
                 break
         else:
-            packets.append(self.device.read(0x82, 1, 100).tobytes())
-        assert packets[-1][-1] == 0x69
+            try:
+                packets.append(self.device.read(0x82, 1, 100).tobytes())
+                print(f"Read sync packet, {len(packets[-1])} bytes")
+            except usb.core.USBTimeoutError:
+                pass
+        # assert packets[-1][-1] == 0x69
 
         data = b"".join(packets[:-1])
         return np.frombuffer(data, dtype=np.uint16)
@@ -139,17 +146,16 @@ class OceanOpticsUSB2000Plus:
 if __name__ == "__main__":
     dev = OceanOpticsUSB2000Plus()
 
-    x, data = dev.get_spectrum()
+    data = dev.get_raw_spectrum()
     plt.clf()
-    plt.plot(x, [int(y) for y in data])
+    plt.plot([int(y) for y in data])
     plt.show()
 
-    print(x.shape)
-    print(data.shape)
+    # print(dev.get_configuration())
 
-    print(dev.get_configuration())
+    # dev.device.write(0x01, b"\x09")
+    # dev.device.read(0x82, 512, 100).tobytes()
 
-    dev.device.write(0x01, b"\x09")
-    dev.device.read(0x82, 512, 100).tobytes()
+    # 1 / 0
 
-    dev.close()
+    # dev.close()
