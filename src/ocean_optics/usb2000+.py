@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     x, data = dev.get_spectrum()
     plt.clf()
-    plt.plot(x, data)
+    plt.plot(x, [int(y) for y in data])
     plt.show()
 
     print(x.shape)
