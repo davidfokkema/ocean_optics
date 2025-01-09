@@ -27,7 +27,7 @@ class OceanOpticsUSB2000Plus:
         self.device = usb.core.find(idVendor=0x2457, idProduct=0x101E)
         self.device.set_configuration()
 
-        # self.clear_buffers()
+        self.clear_buffers()
 
         # Initialize device
         self.device.write(0x01, b"\x01")
@@ -42,14 +42,14 @@ class OceanOpticsUSB2000Plus:
         for endpoint in 0x81, 0x82:
             while True:
                 try:
-                    self.device.read(
+                    data = self.device.read(
                         endpoint=endpoint, size_or_buffer=1_000_000, timeout=100
                     )
                 except usb.core.USBTimeoutError:
                     print(f"ENDPOINT 0x{endpoint:x} timed out.")
                     break
                 else:
-                    time.sleep(1)
+                    print(f"Read {len(data)} bytes on ENDPOINT 0x{endpoint:x}.")
 
     def get_configuration(self) -> DeviceConfiguration:
         """Get all configuration parameters.
@@ -90,7 +90,7 @@ class OceanOpticsUSB2000Plus:
         Returns:
             str: the value of the parameter as text.
         """
-        print(f"Querying parameter {index}...")
+        print(".", end="")
         command = b"\x05" + index.to_bytes(1)
         self.device.write(0x01, command)
         value: bytes = self.device.read(0x81, 17).tobytes()
@@ -123,16 +123,18 @@ class OceanOpticsUSB2000Plus:
                         0x82, 512, int(self.INT_TIME / 1_000) + 100
                     ).tobytes()
                 )
-                print(f"Read {len(packets[-1])} bytes")
+                # print(f"Read {len(packets[-1])} bytes")
+                print(".", end="")
             except usb.core.USBTimeoutError:
                 break
         else:
             try:
                 packets.append(self.device.read(0x82, 1, 100).tobytes())
-                print(f"Read sync packet, {len(packets[-1])} bytes")
+                print(f"Read sync packet, {len(packets[-1])} bytes", end="")
             except usb.core.USBTimeoutError:
                 pass
         # assert packets[-1][-1] == 0x69
+        print()
 
         data = b"".join(packets[:-1])
         return np.frombuffer(data, dtype=np.uint16)
@@ -146,16 +148,24 @@ class OceanOpticsUSB2000Plus:
 if __name__ == "__main__":
     dev = OceanOpticsUSB2000Plus()
 
-    data = dev.get_raw_spectrum()
-    plt.clf()
-    plt.plot([int(y) for y in data])
-    plt.show()
+    for _ in range(10):
+        data = dev.get_raw_spectrum()
+    # plt.clf()
+    # plt.plot([int(y) for y in data])
+    # plt.show()
 
-    # print(dev.get_configuration())
+    try:
+        print(dev.get_configuration())
+    except usb.core.USBTimeoutError:
+        print("Read on config failed.")
 
+    # usb.util.release_interface(dev.device, 0)
+    # usb.util.dispose_resources(dev.device)
+    # print(dev.device.is_kernel_driver_active(1))
     # dev.device.write(0x01, b"\x09")
     # dev.device.read(0x82, 512, 100).tobytes()
 
     # 1 / 0
-
     # dev.close()
+
+    dev.device.reset()
