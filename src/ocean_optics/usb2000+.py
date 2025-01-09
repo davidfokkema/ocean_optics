@@ -25,7 +25,15 @@ class OceanOpticsUSB2000Plus:
 
     def __init__(self) -> None:
         self.device = usb.core.find(idVendor=0x2457, idProduct=0x101E)
-        self.device.set_configuration()
+        # Configuration is set automatically and setting it explicitly, as
+        # required by the PyUSB documentation, messes up the device on Linux. On
+        # that OS the first packet on each IN endpoint disappears into the void
+        # resulting in timeouts. This happens _only_ on the second run of the
+        # script _after_ an _odd_ number of operations in the previous run. This
+        # is really, really, weird.
+        # self.device.set_configuration()
+
+        # There may be stale data from incompleted reads in the buffers.
         self.clear_buffers()
 
         # Initialize device
@@ -140,6 +148,7 @@ if __name__ == "__main__":
 
     print(dev.get_configuration())
 
+    # Make sure old data is left in the buffers, for testing
     dev.device.write(0x01, b"\x09")
     dev.device.read(0x82, 512, 100).tobytes()
 
