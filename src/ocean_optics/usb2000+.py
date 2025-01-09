@@ -19,14 +19,14 @@ class DeviceConfiguration:
 
 
 class OceanOpticsUSB2000Plus:
-    INT_TIME: int = 1_000_000
+    INT_TIME: int = 100_000
 
     _config: DeviceConfiguration
 
     def __init__(self) -> None:
         self.device = usb.core.find(idVendor=0x2457, idProduct=0x101E)
-        self.device.reset()
         self.device.set_configuration()
+        self.clear_buffers()
 
         # Initialize device
         self.device.write(0x01, b"\x01")
@@ -34,6 +34,16 @@ class OceanOpticsUSB2000Plus:
         self.device.write(0x01, b"\x02" + int(self.INT_TIME).to_bytes(4, "little"))
 
         self._config = self.get_configuration()
+
+    def clear_buffers(self) -> None:
+        """Clear buffers by reading from both IN endpoints."""
+        for endpoint in 0x81, 0x82:
+            try:
+                self.device.read(
+                    endpoint=endpoint, size_or_buffer=1_000_000, timeout=100
+                )
+            except usb.core.USBTimeoutError:
+                pass
 
     def get_configuration(self) -> DeviceConfiguration:
         """Get all configuration parameters.
@@ -129,5 +139,8 @@ if __name__ == "__main__":
     print(data.shape)
 
     print(dev.get_configuration())
+
+    dev.device.write(0x01, b"\x09")
+    dev.device.read(0x82, 512, 100).tobytes()
 
     dev.close()
