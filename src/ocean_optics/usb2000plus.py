@@ -7,6 +7,10 @@ import usb.core
 import usb.util
 
 
+class DeviceNotFoundError(Exception):
+    """Raised when no compatible device is connected."""
+
+
 @dataclass
 class DeviceConfiguration:
     serial_number: str
@@ -26,6 +30,9 @@ class OceanOpticsUSB2000Plus:
 
     def __init__(self) -> None:
         self.device = usb.core.find(idVendor=0x2457, idProduct=0x101E)
+        if self.device is None:
+            raise DeviceNotFoundError()
+
         # Configuration is set automatically and setting it explicitly, as
         # required by the PyUSB documentation, messes up the device on Linux. On
         # that OS the first packet on each IN endpoint disappears into the void
