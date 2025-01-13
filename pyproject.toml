@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ocean-optics = "ocean_optics:main"
+ocean-optics = "ocean_optics.cli:app"
 
 [build-system]
 requires = ["hatchling"]
