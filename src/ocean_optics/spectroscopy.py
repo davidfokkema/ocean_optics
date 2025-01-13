@@ -2,6 +2,8 @@ import numpy as np
 
 from ocean_optics.usb2000plus import DeviceNotFoundError, OceanOpticsUSB2000Plus
 
+__all__ = ["DeviceNotFoundError", "SpectroscopyExperiment"]
+
 
 class SpectroscopyExperiment:
     def __init__(self) -> None:
