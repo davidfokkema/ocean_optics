@@ -1,3 +1,6 @@
+from typing import Annotated
+
+import plotext as plt
 import typer
 from rich import print
 from rich.table import Table
@@ -19,15 +22,29 @@ def check():
 
 
 @app.command()
-def spectrum():
+def spectrum(
+    table: Annotated[bool, typer.Option()] = False,
+    graph: Annotated[bool, typer.Option()] = True,
+    scatter: Annotated[bool, typer.Option()] = False,
+):
     """Show a spectrum."""
     experiment = open_experiment()
-
     wavelengths, intensities = experiment.get_spectrum()
-    table = Table("Wavelength (nm)", "Intensity")
-    for wavelength, intensity in zip(wavelengths, intensities):
-        table.add_row(f"{wavelength:.1f}", f"{intensity:.1f}")
-    print(table)
+
+    if table:
+        rich_table = Table("Wavelength (nm)", "Intensity")
+        for wavelength, intensity in zip(wavelengths, intensities):
+            rich_table.add_row(f"{wavelength:.1f}", f"{intensity:.1f}")
+        print(rich_table)
+
+    if graph:
+        plt.clf()
+        plt.theme("clear")
+        if scatter:
+            plt.scatter(wavelengths, intensities, marker="braille")
+        else:
+            plt.plot(wavelengths, intensities, marker="braille")
+        plt.show()
 
 
 def open_experiment():
