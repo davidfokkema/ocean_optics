@@ -12,9 +12,9 @@ def check():
     try:
         experiment = SpectroscopyExperiment()
     except DeviceNotFoundError:
-        print("No compatible device found.")
+        print("[red]No compatible device found.")
     else:
-        print("Device is connected and available.")
+        print("[green]Device is connected and available.")
 
 
 @app.command()
