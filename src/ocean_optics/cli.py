@@ -25,14 +25,28 @@ def check():
 
 @app.command()
 def spectrum(
-    graph: Annotated[bool, typer.Option()] = True,
-    gui: Annotated[bool, typer.Option()] = False,
-    scatter: Annotated[bool, typer.Option()] = False,
-    limits: Annotated[tuple[float, float], typer.Option()] = (None, None),
-    output: Annotated[typer.FileTextWrite, typer.Option()] = None,
-    quiet: Annotated[bool, typer.Option()] = False,
+    graph: Annotated[
+        bool,
+        typer.Option(
+            help="Plot the spectrum in a graph in the terminal. If --no-graph is used, display the resuls in a table instead."
+        ),
+    ] = True,
+    gui: Annotated[bool, typer.Option(help="Use a GUI to show the graph.")] = False,
+    scatter: Annotated[
+        bool, typer.Option(help="Use a scatter plot instead of a line plot.")
+    ] = False,
+    limits: Annotated[
+        tuple[float, float], typer.Option(help="Restrict wavelengths to (min, max).")
+    ] = (None, None),
+    output: Annotated[
+        typer.FileTextWrite, typer.Option(help="Write the results to a CSV file.")
+    ] = None,
+    quiet: Annotated[bool, typer.Option(help="Don't show any console output.")] = False,
 ):
-    """Show a spectrum."""
+    """Record a spectrum.
+
+    Record a spectrum using the spectrometer, displaying the results in a graph in the terminal. There are various options for other forms of output. The unit of intensity is arbitrary.
+    """
 
     experiment = open_experiment()
     wavelengths, intensities = experiment.get_spectrum()
