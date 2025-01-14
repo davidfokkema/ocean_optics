@@ -28,7 +28,8 @@ def spectrum(
     graph: Annotated[
         bool,
         typer.Option(
-            help="Plot the spectrum in a graph in the terminal. If --no-graph is used, display the resuls in a table instead."
+            help="""Plot the spectrum in a graph in the terminal. If --no-graph
+                 is used, display the resuls in a table instead."""
         ),
     ] = True,
     gui: Annotated[bool, typer.Option(help="Use a GUI to show the graph.")] = False,
@@ -45,7 +46,9 @@ def spectrum(
 ):
     """Record a spectrum.
 
-    Record a spectrum using the spectrometer, displaying the results in a graph in the terminal. There are various options for other forms of output. The unit of intensity is arbitrary.
+    Record a spectrum using the spectrometer, displaying the results in a graph
+    in the terminal. There are various options for other forms of output. The
+    unit of intensity is arbitrary.
     """
 
     experiment = open_experiment()
