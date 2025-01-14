@@ -1,3 +1,4 @@
+import csv
 from typing import Annotated
 
 import matplotlib.pyplot as plt
@@ -28,40 +29,53 @@ def spectrum(
     gui: Annotated[bool, typer.Option()] = False,
     scatter: Annotated[bool, typer.Option()] = False,
     limits: Annotated[tuple[float, float], typer.Option()] = (None, None),
+    output: Annotated[typer.FileTextWrite, typer.Option()] = None,
+    quiet: Annotated[bool, typer.Option()] = False,
 ):
     """Show a spectrum."""
-
-    xmin, xmax = limits
 
     experiment = open_experiment()
     wavelengths, intensities = experiment.get_spectrum()
 
-    if graph:
-        if gui:
-            if scatter:
-                plt.scatter(wavelengths, intensities, marker=".")
+    xmin, xmax = limits
+    if limits != (None, None):
+        mask = (xmin <= wavelengths) & (wavelengths <= xmax)
+        wavelengths = wavelengths[mask]
+        intensities = intensities[mask]
+
+    if not quiet:
+        if graph:
+            if gui:
+                if scatter:
+                    plt.scatter(wavelengths, intensities, marker=".")
+                else:
+                    plt.plot(wavelengths, intensities)
+                plt.xlim(xmin, xmax)
+                plt.xlabel("Wavelength (nm)")
+                plt.ylabel("Intensity")
+                plt.show()
             else:
-                plt.plot(wavelengths, intensities)
-            plt.xlim(xmin, xmax)
-            plt.xlabel("Wavelength (nm)")
-            plt.ylabel("Intensity")
-            plt.show()
+                plotext.theme("clear")
+                if scatter:
+                    plotext.scatter(wavelengths, intensities, marker="braille")
+                else:
+                    plotext.plot(wavelengths, intensities, marker="braille")
+                plotext.xlim(xmin, xmax)
+                plotext.xlabel("Wavelength (nm)")
+                plotext.ylabel("Intensity")
+                plotext.show()
         else:
-            plotext.theme("clear")
-            if scatter:
-                plotext.scatter(wavelengths, intensities, marker="braille")
-            else:
-                plotext.plot(wavelengths, intensities, marker="braille")
-            plotext.xlim(xmin, xmax)
-            plotext.xlabel("Wavelength (nm)")
-            plotext.ylabel("Intensity")
-            plotext.show()
-    else:
-        rich_table = Table("Wavelength (nm)", "Intensity")
-        for wavelength, intensity in zip(wavelengths, intensities):
-            if xmin <= wavelength <= xmax:
+            rich_table = Table("Wavelength (nm)", "Intensity")
+            for wavelength, intensity in zip(wavelengths, intensities):
                 rich_table.add_row(f"{wavelength:.1f}", f"{intensity:.1f}")
-        print(rich_table)
+            print(rich_table)
+
+    if output:
+        writer = csv.writer(output)
+        writer.writerow(["Wavelength (nm)", "Intensity"])
+        for wavelength, intensity in zip(wavelengths, intensities):
+            writer.writerow([wavelength, intensity])
+        print(f"Data written to [bold]{output.name}[/] successfully.")
 
 
 def open_experiment():
