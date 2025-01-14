@@ -1,6 +1,7 @@
 from typing import Annotated
 
-import plotext as plt
+import matplotlib.pyplot as plt
+import plotext
 import typer
 from rich import print
 from rich.table import Table
@@ -23,28 +24,44 @@ def check():
 
 @app.command()
 def spectrum(
-    table: Annotated[bool, typer.Option()] = False,
     graph: Annotated[bool, typer.Option()] = True,
+    gui: Annotated[bool, typer.Option()] = False,
     scatter: Annotated[bool, typer.Option()] = False,
+    limits: Annotated[tuple[float, float], typer.Option()] = (None, None),
 ):
     """Show a spectrum."""
+
+    xmin, xmax = limits
+
     experiment = open_experiment()
     wavelengths, intensities = experiment.get_spectrum()
 
-    if table:
+    if graph:
+        if gui:
+            if scatter:
+                plt.scatter(wavelengths, intensities, marker=".")
+            else:
+                plt.plot(wavelengths, intensities)
+            plt.xlim(xmin, xmax)
+            plt.xlabel("Wavelength (nm)")
+            plt.ylabel("Intensity")
+            plt.show()
+        else:
+            plotext.theme("clear")
+            if scatter:
+                plotext.scatter(wavelengths, intensities, marker="braille")
+            else:
+                plotext.plot(wavelengths, intensities, marker="braille")
+            plotext.xlim(xmin, xmax)
+            plotext.xlabel("Wavelength (nm)")
+            plotext.ylabel("Intensity")
+            plotext.show()
+    else:
         rich_table = Table("Wavelength (nm)", "Intensity")
         for wavelength, intensity in zip(wavelengths, intensities):
-            rich_table.add_row(f"{wavelength:.1f}", f"{intensity:.1f}")
+            if xmin <= wavelength <= xmax:
+                rich_table.add_row(f"{wavelength:.1f}", f"{intensity:.1f}")
         print(rich_table)
-
-    if graph:
-        plt.clf()
-        plt.theme("clear")
-        if scatter:
-            plt.scatter(wavelengths, intensities, marker="braille")
-        else:
-            plt.plot(wavelengths, intensities, marker="braille")
-        plt.show()
 
 
 def open_experiment():
