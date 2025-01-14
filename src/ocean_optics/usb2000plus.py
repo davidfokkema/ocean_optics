@@ -24,7 +24,7 @@ class DeviceConfiguration:
 
 
 class OceanOpticsUSB2000Plus:
-    INT_TIME: int = 100_000
+    _integration_time: int = 100_000
 
     _config: DeviceConfiguration
 
@@ -47,10 +47,33 @@ class OceanOpticsUSB2000Plus:
         # Initialize device
         self.device.write(0x01, b"\x01")
         # Set default integration time
-        self.device.write(0x01, b"\x02" + int(self.INT_TIME).to_bytes(4, "little"))
+        self.set_integration_time(self._integration_time)
 
         self.set_shutdown_mode()
         self._config = self.get_configuration()
+
+    def set_integration_time(self, integration_time: int) -> None:
+        """Set device integration.time
+
+        The integration time is how long the device collects photons to measure
+        the spectrum.
+
+        Args:
+            integration_time: The desired integration time in microseconds.
+        """
+        self.device.write(0x01, b"\x02" + int(integration_time).to_bytes(4, "little"))
+        self._integration_time = integration_time
+
+    def get_integration_time(self) -> int:
+        """Return device integration time.
+
+        The integration time is how long the device collects photons to measure
+        the spectrum.
+
+        Returns:
+            The integration time in microseconds as an integer value.
+        """
+        return self._integration_time
 
     def clear_buffers(self) -> None:
         """Clear buffers by reading from both IN endpoints."""
@@ -99,10 +122,10 @@ class OceanOpticsUSB2000Plus:
         the `get_configuration()` method.
 
         Args:
-            index (int): the requested configuration index.
+            index: the requested configuration index.
 
         Returns:
-            str: the value of the parameter as text.
+            A string with the configuration value.
         """
         command = b"\x05" + index.to_bytes(1)
         self.device.write(0x01, command)
@@ -116,7 +139,7 @@ class OceanOpticsUSB2000Plus:
         """Get device saturation level.
 
         Returns:
-            int: saturation level.
+            The saturation level as an integer.
         """
         command = b"\x05\x11"
         self.device.write(0x01, command)
@@ -125,6 +148,14 @@ class OceanOpticsUSB2000Plus:
         return np.frombuffer(data[6:8], dtype=np.uint16)[0]
 
     def get_spectrum(self):
+        """Record a calibrated spectrum.
+
+        Returns:
+            A tuple of `np.ndarrays` with wavelength, intensity data. The
+            wavelengths are in nanometers but the intensity is in arbitrary
+            units (but should be calibrated so that different devices yield the
+            same output).
+        """
         data = self.get_raw_spectrum()
         x = np.arange(len(data))
         c = self._config.wavelength_calibration_coefficients
@@ -135,12 +166,19 @@ class OceanOpticsUSB2000Plus:
         return x[20:], data[20:]
 
     def get_raw_spectrum(self):
+        """Record a raw spectrum, including dark pixels.
+
+        Returns:
+            A tuple of `np.ndarrays` with wavelength, intensity data. The
+            wavelengths are in pixels and the intensity is in arbitrary
+            uncalibrated units.
+        """
         self.device.write(0x01, b"\x09")
         # wait for measurement to complete, integration time is in microseconds.
         # FIXME: don't sleep, because the device will automatically acquire two
         # additional spectra which will be available sooner than acquiring a
         # fresh one.
-        time.sleep(self.INT_TIME / 1_000_000)
+        time.sleep(self._integration_time / 1_000_000)
         packets = []
         for _ in range(8):
             try:
