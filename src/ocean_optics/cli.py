@@ -1,7 +1,9 @@
 import csv
+import pathlib
 from typing import Annotated
 
 import matplotlib.pyplot as plt
+import numpy as np
 import plotext
 import typer
 from rich import print
@@ -105,11 +107,7 @@ def spectrum(
             print(rich_table)
 
     if output:
-        writer = csv.writer(output)
-        writer.writerow(["Wavelength (nm)", "Intensity"])
-        for wavelength, intensity in zip(wavelengths, intensities):
-            writer.writerow([wavelength, intensity])
-        print(f"Data written to [bold]{output.name}[/] successfully.")
+        save_spectrum(output, wavelengths, intensities)
 
 
 @app.command()
@@ -134,6 +132,10 @@ def integrate(
     limits: Annotated[
         tuple[float, float], typer.Option(help="Restrict wavelengths to (min, max).")
     ] = (None, None),
+    output: Annotated[
+        typer.FileTextWrite,
+        typer.Option("--output", "-o", help="Write the results to a CSV file."),
+    ] = None,
 ):
     """Record a spectrum by integrating over multiple measurements.
 
@@ -163,6 +165,9 @@ def integrate(
             plotext.plot(wavelengths, intensities, marker="braille")
         plotext.show()
 
+    if output:
+        save_spectrum(output, wavelengths, intensities)
+
 
 def open_experiment():
     """Open the spectroscopy experiment.
@@ -181,6 +186,23 @@ def open_experiment():
         print("[red]No compatible device found.")
         raise typer.Abort()
     return experiment
+
+
+def save_spectrum(
+    path: pathlib.Path, wavelengths: np.ndarray, intensities: np.ndarray
+) -> None:
+    """Save spectrum data to a file as CSV.
+
+    Args:
+        path: The path of the output file.
+        wavelengths: The wavelength values.
+        intensities: The intensity data.
+    """
+    writer = csv.writer(path)
+    writer.writerow(["Wavelength (nm)", "Intensity"])
+    for wavelength, intensity in zip(wavelengths, intensities):
+        writer.writerow([wavelength, intensity])
+    print(f"Data written to [bold]{path.name}[/] successfully.")
 
 
 if __name__ == "__main__":
