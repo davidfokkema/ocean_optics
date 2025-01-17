@@ -53,7 +53,7 @@ class OceanOpticsUSB2000Plus:
         self._config = self.get_configuration()
 
     def set_integration_time(self, integration_time: int) -> None:
-        """Set device integration.time
+        """Set device integration time.
 
         The integration time is how long the device collects photons to measure
         the spectrum.

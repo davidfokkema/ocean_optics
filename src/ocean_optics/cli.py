@@ -25,6 +25,10 @@ def check():
 
 @app.command()
 def spectrum(
+    int_time: Annotated[
+        int,
+        typer.Option(help="Set the integration time of the device in microseconds."),
+    ] = 100_000,
     graph: Annotated[
         bool,
         typer.Option(
@@ -52,6 +56,7 @@ def spectrum(
     """
 
     experiment = open_experiment()
+    experiment.set_integration_time(int_time)
     wavelengths, intensities = experiment.get_spectrum()
 
     xmin, xmax = limits
