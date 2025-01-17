@@ -154,12 +154,14 @@ class OceanOpticsUSB2000Plus:
             A tuple of `np.ndarrays` with wavelength, intensity data. The
             wavelengths are in nanometers but the intensity is in arbitrary
             units (but should be calibrated so that different devices yield the
-            same output).
+            same output). The maximum intensity value is 65535, so you can check
+            that to see if the device was saturated. This does _not_mean that
+            the resolution of the intensity 16 bits. The number of possible
+            different intensity levels is the so-called 'saturation level'.
         """
         data = self.get_raw_spectrum()
         x = np.arange(len(data))
         c = self._config.wavelength_calibration_coefficients
-        # FIXME: check calibration
         x = c[0] + c[1] * x + c[2] * x**2 + c[3] * x**3
         # scale data, described as 'autonulling' in the manual.
         data = data * (65535 / self._config.saturation_level)
