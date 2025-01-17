@@ -176,15 +176,19 @@ class OceanOpticsUSB2000Plus:
             uncalibrated units.
         """
         self.device.write(0x01, b"\x09")
-        # wait for measurement to complete, integration time is in microseconds.
-        # FIXME: don't sleep, because the device will automatically acquire two
+        # Don't sleep, because the device will automatically acquire two
         # additional spectra which will be available sooner than acquiring a
         # fresh one.
-        time.sleep(self._integration_time / 1_000_000)
+        # Set timeout for measurement to complete, integration time is in
+        # microseconds, timeout is in milliseconds. Add 100 ms (default timeout)
+        # to be sure.
+        timeout = self._integration_time // 1_000 + 100
         packets = []
         for _ in range(8):
             try:
-                packets.append(self.device.read(0x82, 512, 100).tobytes())
+                packets.append(self.device.read(0x82, 512, timeout).tobytes())
+                # after waiting for the first packet, next timeout can be short
+                timeout = 100
             except usb.core.USBTimeoutError:
                 break
         else:
