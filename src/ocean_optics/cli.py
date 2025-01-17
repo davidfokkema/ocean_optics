@@ -27,26 +27,38 @@ def check():
 def spectrum(
     int_time: Annotated[
         int,
-        typer.Option(help="Set the integration time of the device in microseconds."),
+        typer.Option(
+            "--int-time",
+            "-t",
+            help="Set the integration time of the device in microseconds.",
+        ),
     ] = 100_000,
     graph: Annotated[
         bool,
         typer.Option(
+            "--graph/--no-graph",
+            "-g",
             help="""Plot the spectrum in a graph in the terminal. If --no-graph
-                 is used, display the resuls in a table instead."""
+                 is used, display the resuls in a table instead.""",
         ),
     ] = True,
     gui: Annotated[bool, typer.Option(help="Use a GUI to show the graph.")] = False,
     scatter: Annotated[
-        bool, typer.Option(help="Use a scatter plot instead of a line plot.")
+        bool,
+        typer.Option(
+            "--scatter", "-s", help="Use a scatter plot instead of a line plot."
+        ),
     ] = False,
     limits: Annotated[
         tuple[float, float], typer.Option(help="Restrict wavelengths to (min, max).")
     ] = (None, None),
     output: Annotated[
-        typer.FileTextWrite, typer.Option(help="Write the results to a CSV file.")
+        typer.FileTextWrite,
+        typer.Option("--output", "-o", help="Write the results to a CSV file."),
     ] = None,
-    quiet: Annotated[bool, typer.Option(help="Don't show any console output.")] = False,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", "-q", help="Don't show any console output.")
+    ] = False,
 ):
     """Record a spectrum.
 
