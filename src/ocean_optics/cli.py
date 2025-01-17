@@ -112,6 +112,58 @@ def spectrum(
         print(f"Data written to [bold]{output.name}[/] successfully.")
 
 
+@app.command()
+def integrate(
+    count: Annotated[
+        int, typer.Option("--count", "-c", help="Number of measurements to perform.")
+    ] = 10,
+    int_time: Annotated[
+        int,
+        typer.Option(
+            "--int-time",
+            "-t",
+            help="Set the integration time of the device in microseconds.",
+        ),
+    ] = 100_000,
+    scatter: Annotated[
+        bool,
+        typer.Option(
+            "--scatter", "-s", help="Use a scatter plot instead of a line plot."
+        ),
+    ] = False,
+    limits: Annotated[
+        tuple[float, float], typer.Option(help="Restrict wavelengths to (min, max).")
+    ] = (None, None),
+):
+    """Record a spectrum by integrating over multiple measurements.
+
+    Record an integrated spectrum using the spectrometer. Multiple measurements
+    are taken and they are summed to increase the signal to noise ratio. The
+    results are displayed in a graph in the terminal. There are various options
+    for other forms of output. The unit of intensity is arbitrary.
+    """
+    experiment = open_experiment()
+    experiment.set_integration_time(int_time)
+    xmin, xmax = limits
+
+    plotext.theme("clear")
+    plotext.xlim(xmin, xmax)
+    plotext.xlabel("Wavelength (nm)")
+    plotext.ylabel("Intensity")
+    for wavelengths, intensities in experiment.integrate_spectrum(count):
+        if limits != (None, None):
+            mask = (xmin <= wavelengths) & (wavelengths <= xmax)
+            wavelengths = wavelengths[mask]
+            intensities = intensities[mask]
+
+        plotext.clear_data()
+        if scatter:
+            plotext.scatter(wavelengths, intensities, marker="braille")
+        else:
+            plotext.plot(wavelengths, intensities, marker="braille")
+        plotext.show()
+
+
 def open_experiment():
     """Open the spectroscopy experiment.
 
