@@ -7,6 +7,7 @@ import numpy as np
 import plotext
 import typer
 from rich import print
+from rich.progress import track
 from rich.table import Table
 
 from ocean_optics.spectroscopy import DeviceNotFoundError, SpectroscopyExperiment
@@ -38,8 +39,6 @@ def spectrum(
     graph: Annotated[
         bool,
         typer.Option(
-            "--graph/--no-graph",
-            "-g",
             help="""Plot the spectrum in a graph in the terminal. If --no-graph
                  is used, display the resuls in a table instead.""",
         ),
@@ -123,6 +122,12 @@ def integrate(
             help="Set the integration time of the device in microseconds.",
         ),
     ] = 100_000,
+    graph: Annotated[
+        bool,
+        typer.Option(
+            help="Plot the spectrum in a graph in the terminal.",
+        ),
+    ] = True,
     scatter: Annotated[
         bool,
         typer.Option(
@@ -152,18 +157,21 @@ def integrate(
     plotext.xlim(xmin, xmax)
     plotext.xlabel("Wavelength (nm)")
     plotext.ylabel("Intensity")
-    for wavelengths, intensities in experiment.integrate_spectrum(count):
+    for wavelengths, intensities in track(
+        experiment.integrate_spectrum(count), total=count, description="Taking data..."
+    ):
         if limits != (None, None):
             mask = (xmin <= wavelengths) & (wavelengths <= xmax)
             wavelengths = wavelengths[mask]
             intensities = intensities[mask]
 
-        plotext.clear_data()
-        if scatter:
-            plotext.scatter(wavelengths, intensities, marker="braille")
-        else:
-            plotext.plot(wavelengths, intensities, marker="braille")
-        plotext.show()
+        if graph:
+            plotext.clear_data()
+            if scatter:
+                plotext.scatter(wavelengths, intensities, marker="braille")
+            else:
+                plotext.plot(wavelengths, intensities, marker="braille")
+            plotext.show()
 
     if output:
         save_spectrum(output, wavelengths, intensities)
