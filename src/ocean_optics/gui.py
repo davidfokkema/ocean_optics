@@ -61,18 +61,18 @@ class UserInterface(QtWidgets.QMainWindow):
 
         single_button = QtWidgets.QPushButton("Single")
         hbox.addWidget(single_button)
-        integrate_button = QtWidgets.QPushButton("Integrate")
-        hbox.addWidget(integrate_button)
-        continuous_button = QtWidgets.QPushButton("Continuous")
-        hbox.addWidget(continuous_button)
-        stop_button = QtWidgets.QPushButton("Stop")
-        hbox.addWidget(stop_button)
+        self.integrate_button = QtWidgets.QPushButton("Integrate")
+        hbox.addWidget(self.integrate_button)
+        self.continuous_button = QtWidgets.QPushButton("Continuous")
+        hbox.addWidget(self.continuous_button)
+        self.stop_button = QtWidgets.QPushButton("Stop", enabled=False)
+        hbox.addWidget(self.stop_button)
 
         # Slots and signals
         single_button.clicked.connect(self.single_measurement)
-        integrate_button.clicked.connect(self.integrate_spectrum)
-        continuous_button.clicked.connect(self.continuous_spectrum)
-        stop_button.clicked.connect(self.stop_measurement)
+        self.integrate_button.clicked.connect(self.integrate_spectrum)
+        self.continuous_button.clicked.connect(self.continuous_spectrum)
+        self.stop_button.clicked.connect(self.stop_measurement)
 
         # Open device
         self.experiment = SpectroscopyExperiment()
@@ -80,8 +80,10 @@ class UserInterface(QtWidgets.QMainWindow):
         # Workers
         self.integrate_spectrum_worker = IntegrateSpectrumWorker()
         self.integrate_spectrum_worker.new_data.connect(self.plot_new_data)
+        self.integrate_spectrum_worker.finished.connect(self.worker_has_finished)
         self.continuous_spectrum_worker = ContinuousSpectrumWorker()
         self.continuous_spectrum_worker.new_data.connect(self.plot_new_data)
+        self.continuous_spectrum_worker.finished.connect(self.worker_has_finished)
 
     @Slot()
     def single_measurement(self):
@@ -90,17 +92,31 @@ class UserInterface(QtWidgets.QMainWindow):
 
     @Slot()
     def integrate_spectrum(self) -> None:
+        self.disable_measurement_buttons()
+        self.stop_button.setEnabled(False)
         self.integrate_spectrum_worker.setup(experiment=self.experiment, count=10)
         self.integrate_spectrum_worker.start()
 
     @Slot()
     def continuous_spectrum(self) -> None:
+        self.disable_measurement_buttons()
         self.continuous_spectrum_worker.setup(experiment=self.experiment)
         self.continuous_spectrum_worker.start()
 
     @Slot()
     def stop_measurement(self) -> None:
         self.continuous_spectrum_worker.stop()
+
+    def disable_measurement_buttons(self) -> None:
+        self.integrate_button.setEnabled(False)
+        self.continuous_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+
+    @Slot()
+    def worker_has_finished(self) -> None:
+        self.integrate_button.setEnabled(True)
+        self.continuous_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
 
     def plot_data(self, wavelengths, intensities):
         self.plot_widget.clear()
