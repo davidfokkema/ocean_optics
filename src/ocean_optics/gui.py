@@ -12,29 +12,37 @@ pg.setConfigOption("background", "w")
 pg.setConfigOption("foreground", "k")
 
 
-class IntegrateSpectrumWorker(QtCore.QThread):
+class MeasurementWorker(QtCore.QThread):
     new_data = QtCore.Signal(tuple)
+    stopped = False
 
-    def __init__(self, experiment: SpectroscopyExperiment) -> None:
-        super().__init__()
+    def setup(self, experiment: SpectroscopyExperiment) -> None:
         self.experiment = experiment
 
+    def run(self) -> None: ...
+
+    def stop(self) -> None:
+        self.stopped = True
+
+
+class IntegrateSpectrumWorker(MeasurementWorker):
+    def setup(self, experiment: SpectroscopyExperiment, count: int) -> None:
+        self.experiment = experiment
+        self.count = count
+
     def run(self) -> None:
-        for wavelengths, intensities in self.experiment.integrate_spectrum(10):
+        for wavelengths, intensities in self.experiment.integrate_spectrum(self.count):
             self.new_data.emit((wavelengths, intensities))
 
 
-class ContinuousSpectrumWorker(QtCore.QThread):
-    new_data = QtCore.Signal(tuple)
-
-    def __init__(self, experiment: SpectroscopyExperiment) -> None:
-        super().__init__()
-        self.experiment = experiment
-
+class ContinuousSpectrumWorker(MeasurementWorker):
     def run(self) -> None:
+        self.stopped = False
         while True:
             wavelengths, intensities = self.experiment.get_spectrum()
             self.new_data.emit((wavelengths, intensities))
+            if self.stopped:
+                break
 
 
 class UserInterface(QtWidgets.QMainWindow):
@@ -57,19 +65,22 @@ class UserInterface(QtWidgets.QMainWindow):
         hbox.addWidget(integrate_button)
         continuous_button = QtWidgets.QPushButton("Continuous")
         hbox.addWidget(continuous_button)
+        stop_button = QtWidgets.QPushButton("Stop")
+        hbox.addWidget(stop_button)
 
         # Slots and signals
         single_button.clicked.connect(self.single_measurement)
         integrate_button.clicked.connect(self.integrate_spectrum)
         continuous_button.clicked.connect(self.continuous_spectrum)
+        stop_button.clicked.connect(self.stop_measurement)
 
         # Open device
         self.experiment = SpectroscopyExperiment()
 
         # Workers
-        self.integrate_spectrum_worker = IntegrateSpectrumWorker(self.experiment)
+        self.integrate_spectrum_worker = IntegrateSpectrumWorker()
         self.integrate_spectrum_worker.new_data.connect(self.plot_new_data)
-        self.continuous_spectrum_worker = ContinuousSpectrumWorker(self.experiment)
+        self.continuous_spectrum_worker = ContinuousSpectrumWorker()
         self.continuous_spectrum_worker.new_data.connect(self.plot_new_data)
 
     @Slot()
@@ -79,11 +90,17 @@ class UserInterface(QtWidgets.QMainWindow):
 
     @Slot()
     def integrate_spectrum(self) -> None:
+        self.integrate_spectrum_worker.setup(experiment=self.experiment, count=10)
         self.integrate_spectrum_worker.start()
 
     @Slot()
     def continuous_spectrum(self) -> None:
+        self.continuous_spectrum_worker.setup(experiment=self.experiment)
         self.continuous_spectrum_worker.start()
+
+    @Slot()
+    def stop_measurement(self) -> None:
+        self.continuous_spectrum_worker.stop()
 
     def plot_data(self, wavelengths, intensities):
         self.plot_widget.clear()
