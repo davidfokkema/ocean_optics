@@ -26,26 +26,46 @@ class MeasurementWorker(QtCore.QThread):
 
 
 class IntegrateSpectrumWorker(MeasurementWorker):
-    def setup(self, experiment: SpectroscopyExperiment, count: int) -> None:
+    def setup(
+        self,
+        experiment: SpectroscopyExperiment,
+        count: int,
+        progress_bar: QtWidgets.QProgressBar,
+    ) -> None:
         self.experiment = experiment
         self.count = count
+        self.progress_bar = progress_bar
 
     def run(self) -> None:
         self.stopped = False
-        for wavelengths, intensities in self.experiment.integrate_spectrum(self.count):
+        self.progress_bar.setRange(0, self.count)
+        for idx, (wavelengths, intensities) in enumerate(
+            self.experiment.integrate_spectrum(self.count), start=1
+        ):
             self.new_data.emit((wavelengths, intensities))
+            self.progress_bar.setValue(idx)
             if self.stopped:
                 self.experiment.stopped = True
 
 
 class ContinuousSpectrumWorker(MeasurementWorker):
+    def setup(
+        self,
+        experiment: SpectroscopyExperiment,
+        progress_bar: QtWidgets.QProgressBar,
+    ) -> None:
+        self.experiment = experiment
+        self.progress_bar = progress_bar
+
     def run(self) -> None:
         self.stopped = False
+        self.progress_bar.setRange(0, 0)
         while True:
             wavelengths, intensities = self.experiment.get_spectrum()
             self.new_data.emit((wavelengths, intensities))
             if self.stopped:
                 break
+        self.progress_bar.setRange(0, 1)
 
 
 class UserInterface(QtWidgets.QMainWindow):
@@ -61,6 +81,8 @@ class UserInterface(QtWidgets.QMainWindow):
         vbox.addWidget(self.plot_widget)
         hbox = QtWidgets.QHBoxLayout()
         vbox.addLayout(hbox)
+        self.progress_bar = QtWidgets.QProgressBar()
+        vbox.addWidget(self.progress_bar)
 
         self.single_button = QtWidgets.QPushButton("Single")
         hbox.addWidget(self.single_button)
@@ -90,19 +112,26 @@ class UserInterface(QtWidgets.QMainWindow):
 
     @Slot()
     def single_measurement(self):
+        self.progress_bar.setRange(0, 1)
         wavelengths, intensities = self.experiment.get_spectrum()
         self.plot_data(wavelengths, intensities)
 
     @Slot()
     def integrate_spectrum(self) -> None:
         self.disable_measurement_buttons()
-        self.integrate_spectrum_worker.setup(experiment=self.experiment, count=100)
+        self.integrate_spectrum_worker.setup(
+            experiment=self.experiment, count=100, progress_bar=self.progress_bar
+        )
         self.integrate_spectrum_worker.start()
 
     @Slot()
     def continuous_spectrum(self) -> None:
         self.disable_measurement_buttons()
-        self.continuous_spectrum_worker.setup(experiment=self.experiment)
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(0)
+        self.continuous_spectrum_worker.setup(
+            experiment=self.experiment, progress_bar=self.progress_bar
+        )
         self.continuous_spectrum_worker.start()
 
     @Slot()
