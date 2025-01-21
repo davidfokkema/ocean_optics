@@ -1,3 +1,5 @@
+import csv
+import pathlib
 import sys
 
 import numpy as np
@@ -59,6 +61,9 @@ class ContinuousSpectrumWorker(MeasurementWorker):
 
 
 class UserInterface(QtWidgets.QMainWindow):
+    _wavelengths: np.ndarray | None = None
+    _intensities: np.ndarray | None = None
+
     def __init__(self):
         super().__init__()
 
@@ -72,6 +77,7 @@ class UserInterface(QtWidgets.QMainWindow):
         self.ui.integrate_button.clicked.connect(self.integrate_spectrum)
         self.ui.continuous_button.clicked.connect(self.continuous_spectrum)
         self.ui.stop_button.clicked.connect(self.stop_measurement)
+        self.ui.save_button.clicked.connect(self.save_data)
 
         # Open device
         self.experiment = SpectroscopyExperiment()
@@ -136,6 +142,8 @@ class UserInterface(QtWidgets.QMainWindow):
         self.ui.stop_button.setEnabled(False)
 
     def plot_data(self, wavelengths, intensities) -> None:
+        self._wavelengths = wavelengths
+        self._intensities = intensities
         self.ui.plot_widget.clear()
         self.ui.plot_widget.plot(
             wavelengths, intensities, symbol=None, pen={"color": "k", "width": 5}
@@ -151,6 +159,23 @@ class UserInterface(QtWidgets.QMainWindow):
     @Slot(int)
     def update_progress_bar(self, value: int) -> None:
         self.ui.progress_bar.setValue(value)
+
+    @Slot()
+    def save_data(self) -> None:
+        if self._wavelengths is None:
+            QtWidgets.QMessageBox.warning(
+                self, "No data", "Perform a measurement before saving."
+            )
+        else:
+            path, _ = QtWidgets.QFileDialog.getSaveFileName(filter="CSV Files (*.csv)")
+            with open(path, mode="w") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Wavelength (nm)", "Intensity"])
+                for wavelength, intensity in zip(self._wavelengths, self._intensities):
+                    writer.writerow([wavelength, intensity])
+            QtWidgets.QMessageBox.information(
+                self, "Data saved", f"Data saved successfully to {path}."
+            )
 
 
 def main():

@@ -60,6 +60,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.stop_button)
 
+        self.save_button = QPushButton(self.centralwidget)
+        self.save_button.setObjectName(u"save_button")
+
+        self.horizontalLayout_2.addWidget(self.save_button)
+
 
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
@@ -124,6 +129,7 @@ class Ui_MainWindow(object):
         self.continuous_button.setText(QCoreApplication.translate("MainWindow", u"Continuous", None))
         self.integrate_button.setText(QCoreApplication.translate("MainWindow", u"Integrate", None))
         self.stop_button.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
+        self.save_button.setText(QCoreApplication.translate("MainWindow", u"Save data", None))
         self.integrationTimeSLabel.setText(QCoreApplication.translate("MainWindow", u"Integration time (\u00b5s)", None))
         self.integrationsLabel.setText(QCoreApplication.translate("MainWindow", u"# integrations", None))
     # retranslateUi
