@@ -22,3 +22,8 @@ ocean-optics = "ocean_optics.cli:app"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "rust-just>=1.38.0",
+]
