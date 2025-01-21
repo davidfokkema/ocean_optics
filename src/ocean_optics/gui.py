@@ -88,7 +88,6 @@ class UserInterface(QtWidgets.QMainWindow):
 
     @Slot()
     def set_integration_time(self, value: int) -> None:
-        print(f"Value set: {value}")
         self.experiment.set_integration_time(value)
 
     @Slot()
