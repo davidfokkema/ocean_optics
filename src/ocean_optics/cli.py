@@ -10,6 +10,7 @@ from rich import print
 from rich.progress import track
 from rich.table import Table
 
+import ocean_optics.gui
 from ocean_optics.spectroscopy import DeviceNotFoundError, SpectroscopyExperiment
 
 app = typer.Typer()
@@ -175,6 +176,12 @@ def integrate(
 
     if output:
         save_spectrum(output, wavelengths, intensities)
+
+
+@app.command()
+def gui():
+    """Run the GUI spectroscopy application."""
+    ocean_optics.gui.main()
 
 
 def open_experiment():
