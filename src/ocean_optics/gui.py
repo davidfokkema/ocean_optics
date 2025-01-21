@@ -62,17 +62,17 @@ class UserInterface(QtWidgets.QMainWindow):
         hbox = QtWidgets.QHBoxLayout()
         vbox.addLayout(hbox)
 
-        single_button = QtWidgets.QPushButton("Single")
-        hbox.addWidget(single_button)
-        self.integrate_button = QtWidgets.QPushButton("Integrate")
-        hbox.addWidget(self.integrate_button)
+        self.single_button = QtWidgets.QPushButton("Single")
+        hbox.addWidget(self.single_button)
         self.continuous_button = QtWidgets.QPushButton("Continuous")
         hbox.addWidget(self.continuous_button)
+        self.integrate_button = QtWidgets.QPushButton("Integrate")
+        hbox.addWidget(self.integrate_button)
         self.stop_button = QtWidgets.QPushButton("Stop", enabled=False)
         hbox.addWidget(self.stop_button)
 
         # Slots and signals
-        single_button.clicked.connect(self.single_measurement)
+        self.single_button.clicked.connect(self.single_measurement)
         self.integrate_button.clicked.connect(self.integrate_spectrum)
         self.continuous_button.clicked.connect(self.continuous_spectrum)
         self.stop_button.clicked.connect(self.stop_measurement)
@@ -111,12 +111,14 @@ class UserInterface(QtWidgets.QMainWindow):
         self.continuous_spectrum_worker.stop()
 
     def disable_measurement_buttons(self) -> None:
+        self.single_button.setEnabled(False)
         self.integrate_button.setEnabled(False)
         self.continuous_button.setEnabled(False)
         self.stop_button.setEnabled(True)
 
     @Slot()
     def worker_has_finished(self) -> None:
+        self.single_button.setEnabled(True)
         self.integrate_button.setEnabled(True)
         self.continuous_button.setEnabled(True)
         self.stop_button.setEnabled(False)
