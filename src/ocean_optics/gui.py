@@ -31,8 +31,11 @@ class IntegrateSpectrumWorker(MeasurementWorker):
         self.count = count
 
     def run(self) -> None:
+        self.stopped = False
         for wavelengths, intensities in self.experiment.integrate_spectrum(self.count):
             self.new_data.emit((wavelengths, intensities))
+            if self.stopped:
+                self.experiment.stopped = True
 
 
 class ContinuousSpectrumWorker(MeasurementWorker):
@@ -93,8 +96,7 @@ class UserInterface(QtWidgets.QMainWindow):
     @Slot()
     def integrate_spectrum(self) -> None:
         self.disable_measurement_buttons()
-        self.stop_button.setEnabled(False)
-        self.integrate_spectrum_worker.setup(experiment=self.experiment, count=10)
+        self.integrate_spectrum_worker.setup(experiment=self.experiment, count=100)
         self.integrate_spectrum_worker.start()
 
     @Slot()
@@ -105,6 +107,7 @@ class UserInterface(QtWidgets.QMainWindow):
 
     @Slot()
     def stop_measurement(self) -> None:
+        self.integrate_spectrum_worker.stop()
         self.continuous_spectrum_worker.stop()
 
     def disable_measurement_buttons(self) -> None:

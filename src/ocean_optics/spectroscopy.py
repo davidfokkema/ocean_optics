@@ -8,6 +8,8 @@ __all__ = ["DeviceNotFoundError", "SpectroscopyExperiment"]
 
 
 class SpectroscopyExperiment:
+    stopped = True
+
     def __init__(self) -> None:
         self.device = OceanOpticsUSB2000Plus()
 
@@ -25,10 +27,14 @@ class SpectroscopyExperiment:
     def integrate_spectrum(self, count: int) -> Iterator[tuple[np.ndarray, np.ndarray]]:
         """Record a spectrum by integrating over multiple measurements.
 
-        Record an integrated spectrum using the spectrometer. Multiple measurements
-        are taken and they are summed to increase the signal to noise ratio. The
-        results are displayed in a graph in the terminal. There are various options
-        for other forms of output. The unit of intensity is arbitrary.
+        Record an integrated spectrum using the spectrometer. This method acts
+        as an iterator. Multiple measurements are taken and they are summed to
+        increase the signal to noise ratio. After each measurement, the current
+        dataset is yielded. The unit of intensity is arbitrary.
+
+        If the `stopped` attribute of the class instance is set to `True` during
+        the measurement, no further measurements are taken and the iterator will
+        finish executing.
 
         Args:
             count: The number of measurements to perform.
@@ -39,12 +45,14 @@ class SpectroscopyExperiment:
             units (but should be calibrated so that different devices yield the
             same output).
         """
-
+        self.stopped = False
         all_spectra = []
         for _ in range(count):
             wavelengths, intensities = self.device.get_spectrum()
             all_spectra.append(intensities)
             yield wavelengths, np.sum(all_spectra, axis=0)
+            if self.stopped:
+                break
 
     def set_integration_time(self, integration_time: int) -> None:
         """Set device integration time.
