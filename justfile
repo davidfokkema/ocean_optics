@@ -10,3 +10,6 @@ format:
 
 fix:
     uvx ruff check --fix
+
+typecheck:
+    uv run mypy -p ocean_optics --strict
