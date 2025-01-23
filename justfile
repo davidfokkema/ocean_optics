@@ -4,3 +4,9 @@ compile:
 
 design:
     uv run designer src/ocean_optics/main_window.ui
+
+format:
+    uvx ruff format
+
+fix:
+    uvx ruff check --fix

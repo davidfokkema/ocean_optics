@@ -1,4 +1,3 @@
-import array
 import pathlib
 import platform
 import sys
@@ -41,7 +40,7 @@ while True:
 print(f"Read {num_packets} packets of data.")
 
 # set integration time
-dev.write(0x02, b"\x02" + int(INT_TIME).to_bytes(2, 'little'))
+dev.write(0x02, b"\x02" + int(INT_TIME).to_bytes(2, "little"))
 
 try:
     while True:
