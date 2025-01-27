@@ -6,6 +6,7 @@ readme = "README.md"
 authors = [{ name = "David Fokkema", email = "davidfokkema@icloud.com" }]
 requires-python = ">=3.11"
 dependencies = [
+    "briefcase>=0.3.21",
     "matplotlib>=3.10.0",
     "numpy>=2.2.1",
     "plotext>=5.3.2",
