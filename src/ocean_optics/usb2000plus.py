@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import libusb_package
 import numpy as np
 import plotext as plt
 import usb.core
@@ -28,7 +29,7 @@ class OceanOpticsUSB2000Plus:
     _config: DeviceConfiguration
 
     def __init__(self) -> None:
-        self.device = usb.core.find(idVendor=0x2457, idProduct=0x101E)
+        self.device = libusb_package.find(idVendor=0x2457, idProduct=0x101E)
         if self.device is None:
             raise DeviceNotFoundError()
 

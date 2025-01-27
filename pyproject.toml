@@ -6,6 +6,7 @@ readme = "README.md"
 authors = [{ name = "David Fokkema", email = "davidfokkema@icloud.com" }]
 requires-python = ">=3.11"
 dependencies = [
+    "libusb-package>=1.0.26.2",
     "briefcase>=0.3.21",
     "matplotlib>=3.10.0",
     "numpy>=2.2.1",
@@ -37,7 +38,6 @@ module = ["usb.*", "libusb.*", "plotext.*", "pyqtgraph.*"]
 ignore_missing_imports = true
 
 
-
 # content below this line added by briefcase convert
 # This project was generated with 0.3.21 using template: https://github.com/beeware/briefcase-template@v0.3.21
 [tool.briefcase]
@@ -54,12 +54,8 @@ formal_name = "Ocean Optics"
 description = "Spectrosopy software using an Ocean Optics 2000(+) spectrometer."
 long_description = """More details about the app should go here.
 """
-sources = [
-    "src/ocean_optics",
-]
-test_sources = [
-    "tests",
-]
+sources = ["src/ocean_optics"]
+test_sources = ["tests"]
 
 requires = [
     # Add your cross-platform app requirements here
@@ -141,4 +137,3 @@ requires = [
 requires = [
     # Add your web-specific app requirements here
 ]
-
