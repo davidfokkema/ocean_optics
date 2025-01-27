@@ -121,7 +121,6 @@ class UserInterface(QtWidgets.QMainWindow):
     @Slot()
     def stop_measurement(self) -> None:
         if self.continuous_spectrum_worker.isRunning():
-            print("Continuous is running")
             self.continuous_spectrum_worker.stop()
             self.ui.progress_bar.setRange(0, 1)
         else:
