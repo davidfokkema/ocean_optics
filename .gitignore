@@ -1,2 +1,4 @@
 __pycache__/
 *.csv
+*.log
+/src/ocean_optics.dist-info

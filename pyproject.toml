@@ -35,3 +35,110 @@ exclude = """(?x)(
 [[tool.mypy.overrides]]
 module = ["usb.*", "libusb.*", "plotext.*", "pyqtgraph.*"]
 ignore_missing_imports = true
+
+
+
+# content below this line added by briefcase convert
+# This project was generated with 0.3.21 using template: https://github.com/beeware/briefcase-template@v0.3.21
+[tool.briefcase]
+project_name = "Ocean Optics"
+bundle = "com.davidfokkema.ocean-optics"
+version = "0.0.1"
+url = "https://github.com/davidfokkema/ocean_optics"
+license.file = "LICENSE"
+author = "David Fokkema"
+author_email = "davidfokkema@icloud.com"
+
+[tool.briefcase.app.ocean-optics]
+formal_name = "Ocean Optics"
+description = "Spectrosopy software using an Ocean Optics 2000(+) spectrometer."
+long_description = """More details about the app should go here.
+"""
+sources = [
+    "src/ocean_optics",
+]
+test_sources = [
+    "tests",
+]
+
+requires = [
+    # Add your cross-platform app requirements here
+]
+test_requires = [
+    # Add your cross-platform test requirements here
+]
+
+[tool.briefcase.app.ocean-optics.macOS]
+universal_build = true
+requires = [
+    # Add your macOS-specific app requirements here
+]
+
+[tool.briefcase.app.ocean-optics.linux]
+requires = [
+    # Add your Linux-specific app requirements here
+]
+
+[tool.briefcase.app.ocean-optics.linux.system.debian]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.ocean-optics.linux.system.rhel]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.ocean-optics.linux.system.suse]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.ocean-optics.linux.system.arch]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.ocean-optics.linux.flatpak]
+flatpak_runtime = "org.freedesktop.Platform"
+flatpak_runtime_version = "24.08"
+flatpak_sdk = "org.freedesktop.Sdk"
+
+[tool.briefcase.app.ocean-optics.windows]
+requires = [
+    # Add your Windows-specific app requirements here
+]
+
+# Mobile deployments
+[tool.briefcase.app.ocean-optics.iOS]
+requires = [
+    # Add your iOS-specific app requirements here
+]
+
+[tool.briefcase.app.ocean-optics.android]
+requires = [
+    # Add your Android-specific app requirements here
+]
+
+# Web deployments
+[tool.briefcase.app.ocean-optics.web]
+requires = [
+    # Add your web-specific app requirements here
+]
+
